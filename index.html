@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Birthday Surprise 🎉</title>
+<style>
+  :root{ --bg:#071028; --accent:#ff5c8d; --muted:#c9d6ff; }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+  body{background:linear-gradient(180deg,#071028 0%, #081233 60%); color:#fff; overflow:hidden; }
+
+  .wrap{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:30px;}
+  .card{width:920px;max-width:95%;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02)); border-radius:18px; padding:36px; box-shadow: 0 8px 40px rgba(2,4,20,0.7); backdrop-filter: blur(6px); position:relative; overflow:hidden;}
+
+  h1.title{font-size:34px;margin:0 0 18px 0; letter-spacing:0.6px; color:var(--muted);}
+  p.lead{margin:6px 0 20px 0;color:#bfcffb}
+
+  .page{display:none;} .page.active{display:block;}
+
+  .row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  input[type="text"]{padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#fff;font-size:16px;min-width:240px}
+  button.primary{background:linear-gradient(90deg,var(--accent),#ff8db7);color:#fff;border:none;padding:12px 18px;border-radius:10px;font-size:16px;cursor:pointer;box-shadow:0 8px 20px rgba(255,92,141,0.12)}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:10px 14px;border-radius:10px;color:#fff;cursor:pointer}
+
+  #confettiCanvas, #fireCanvas {position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:none;z-index:20}
+  .hearts {position:absolute;right:18px;top:18px;z-index:22;display:flex;flex-direction:column;gap:8px}
+
+  .heart { width:36px;height:36px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:8px;transform-origin:center; }
+  .heart svg{filter: drop-shadow(0 6px 14px rgba(0,0,0,0.45));}
+
+  .stage{display:flex;gap:24px;align-items:center;justify-content:center;flex-direction:column;margin-top:8px}
+  .cake{ width:220px;height:140px;border-radius:12px;background:linear-gradient(180deg,#ffb6d2,#ff8fb2); position:relative;box-shadow:0 8px 30px rgba(0,0,0,0.4); }
+  .candle{position:absolute;left:50%;transform:translateX(-50%);top:-26px;width:20px;height:48px;background:#fff;border-radius:6px;display:flex;align-items:flex-start;justify-content:center;}
+  .flame{width:12px;height:18px;background:linear-gradient(#ffd84d,#ff8a00);border-radius:50%;margin-top:-12px;box-shadow:0 6px 12px rgba(255,140,0,0.4)}
+
+  .msg{font-size:20px;line-height:1.45;color:#eef0ff;min-height:60px;margin-top:12px}
+  .namebig{font-size:28px;color:#ffe27a;margin:8px 0 0 0}
+
+  .final{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .controls{display:flex;gap:12px;align-items:center;margin-top:20px}
+  .share-box{background:rgba(255,255,255,0.025);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
+  .note{color:#9fb0ff;font-size:13px;margin-top:6px}
+
+  @media (max-width:620px){
+    .row{flex-direction:column;align-items:stretch}
+    .cake{width:160px;height:110px}
+  }
+
+  .fade-up{animation:fadeUp .6s ease both}
+  @keyframes fadeUp{from{opacity:0; transform: translateY(8px)} to{opacity:1; transform:none}}
+</style>
+</head>
+<body>
+  <canvas id="confettiCanvas"></canvas>
+  <canvas id="fireCanvas"></canvas>
+
+  <div class="wrap">
+    <div class="card fade-up">
+      <div id="page1" class="page active">
+        <h1 class="title">Make it special — Surprise Page</h1>
+        <p class="lead">Type their name and press <strong>Open Surprise</strong>. Music & animation start on click.</p>
+        <div class="row">
+          <input id="nameInput" type="text" placeholder="Type name " />
+          <button class="primary" id="openBtn">Open Surprise ✨</button>
+          <button class="ghost" id="exportBtn">Export / Get Link</button>
+        </div>
+        <div class="note">Tip: Add your own <code>music.mp3</code> in the same folder for custom music.</div>
+      </div>
+
+      <div id="page2" class="page">
+        <h1 class="title">🎉 Surprise — Confetti & Hearts</h1>
+        <div class="row stage">
+          <div class="cake" aria-hidden="true">
+            <div class="candle">
+              <div class="flame" id="flame1"></div>
+            </div>
+          </div>
+          <div style="max-width:420px;text-align:left">
+            <div id="msgName" class="namebig"></div>
+            <div class="msg">Click hearts on the right to shower love. When ready, press "Make a Wish".</div>
+            <div class="controls">
+              <button class="primary" id="wishBtn">Make a Wish 🎂</button>
+              <button class="ghost" id="skipToMsg">See Message →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="page3" class="page">
+        <h1 class="title">🎂 Make A Wish</h1>
+        <p class="lead">Press the button to see a personal message.</p>
+        <div style="display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap">
+          
+          <button class="primary" id="toMsgBtn">Show Personal Message →</button>
+        </div>
+      </div>
+
+      <div id="page4" class="page">
+        <h1 class="title">A Message for <span id="finalName" style="color:#ffe6a3"></span></h1>
+        <div class="msg" id="typed"></div>
+        <div class="controls">
+          <button class="primary" id="finalFireBtn">Final Fireworks ✨</button>
+          <button class="ghost" id="finalRestart">Start Over</button>
+        </div>
+      </div>
+
+      <div id="page5" class="page">
+        <div class="final">
+          <h1 class="title">🎊 That's it — Happy Birthday!</h1>
+         
+          
+          <div class="controls">
+           
+            <button class="ghost" id="openAgain">Open Again</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- hearts quick buttons -->
+      <div class="hearts" aria-hidden="true">
+        <div class="heart" data-color="#ff6b6b" title="Send ❤️">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="#ff6b6b" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7.33-4.9-9.53-8.047C-.35 7.983 3.4 4 7 6.023A5.5 5.5 0 0112 7.5c1.6-3 5-1.1 5-1.1 3.5-2.1 7.35 1.98 4.53 6.953C19.33 16.1 12 21 12 21z"/></svg>
+        </div>
+        <div class="heart" data-color="#ffb86b" title="Send 💛">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="#ffb86b" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7.33-4.9-9.53-8.047C-.35 7.983 3.4 4 7 6.023A5.5 5.5 0 0112 7.5c1.6-3 5-1.1 5-1.1 3.5-2.1 7.35 1.98 4.53 6.953C19.33 16.1 12 21 12 21z"/></svg>
+        </div>
+        <div class="heart" data-color="#8be3ff" title="Send 💙">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="#8be3ff" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7.33-4.9-9.53-8.047C-.35 7.983 3.4 4 7 6.023A5.5 5.5 0 0112 7.5c1.6-3 5-1.1 5-1.1 3.5-2.1 7.35 1.98 4.53 6.953C19.33 16.1 12 21 12 21z"/></svg>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <audio id="bgMusic" loop preload="auto">
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
+
+<script>
+/* Page flow helpers */
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const el = document.getElementById(id);
+  if(el) el.classList.add('active');
+}
+
+const nameInput = document.getElementById('nameInput');
+const openBtn = document.getElementById('openBtn');
+const exportBtn = document.getElementById('exportBtn');
+const msgName = document.getElementById('msgName');
+const bgMusic = document.getElementById('bgMusic');
+
+openBtn.addEventListener('click', async () => {
+  const name = nameInput.value.trim() || 'Friend';
+  msgName.textContent = 'Happy Birthday, ' + name + ' 🎉';
+  document.getElementById('finalName').textContent = name;
+  showPage('page2');
+
+  try{ await bgMusic.play(); } catch(e){ console.warn('Audio blocked or not found', e); }
+
+  startConfetti(); startHearts();
+});
+
+if(document.getElementById('skipToMsg')) {
+  document.getElementById('skipToMsg').addEventListener('click', ()=> showPage('page4'));
+}
+if(document.getElementById('wishBtn')) {
+  document.getElementById('wishBtn').addEventListener('click', ()=> showPage('page3'));
+}
+if(document.getElementById('blowBtn')) {
+  document.getElementById('blowBtn').addEventListener('click', ()=> {
+    const flame = document.getElementById('flame1');
+    flame.style.display = (flame.style.display === 'none') ? 'block' : 'none';
+  });
+}
+if(document.getElementById('toMsgBtn')) {
+  document.getElementById('toMsgBtn').addEventListener('click', ()=> {
+    showPage('page4'); typeMessage();
+  });
+}
+if(document.getElementById('finalFireBtn')) {
+  document.getElementById('finalFireBtn').addEventListener('click', ()=> {
+    triggerFireworks();
+    setTimeout(()=> showPage('page5'), 2200);
+  });
+}
+if(document.getElementById('finalRestart')) {
+  document.getElementById('finalRestart').addEventListener('click', ()=> showPage('page1'));
+}
+if(document.getElementById('openAgain')) {
+  document.getElementById('openAgain').addEventListener('click', ()=> showPage('page1'));
+}
+
+/* Typing message (personalized) */
+function typeMessage(){
+  const target = document.getElementById('typed');
+  const name = document.getElementById('finalName').textContent || 'Friend';
+  const lines = [
+    `Dear ${name},`,
+    `I wish ki tum hamesha khush raho — today is your day to shine and be celebrated.`,
+    `May your year be full of wins, peaceful mornings, and bold adventures.`,
+    `You're loved. Happy Birthday! 🎈❤️ Love you!`,
+    `- from weirdo.`
+  ];
+  const text = lines.join('\n\n');
+  target.innerText = '';
+  let i = 0;
+  const speed = 28;
+  const t = setInterval(()=>{
+    target.innerText = text.slice(0, i);
+    i++;
+    if(i > text.length) clearInterval(t);
+  }, speed);
+}
+
+/* Confetti */
+function startConfetti(){
+  const canvas = document.getElementById('confettiCanvas');
+  const ctx = canvas.getContext('2d');
+  let w = canvas.width = innerWidth;
+  let h = canvas.height = innerHeight;
+  window.addEventListener('resize', ()=> { w = canvas.width = innerWidth; h = canvas.height = innerHeight; });
+
+  let particles = [];
+  const colors = ['#ff6b6b','#ffd56b','#8be3ff','#bfa2ff','#ff9fb1'];
+  for(let i=0;i<180;i++){
+    particles.push({
+      x: Math.random()*w,
+      y: Math.random()*h - h,
+      r: Math.random()*6+3,
+      d: Math.random()*2+1,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      tilt: Math.random()*10,
+      tiltAngleInc: Math.random()*0.07+0.05
+    });
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    particles.forEach(p=>{
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.tilt*Math.PI/180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r*1.6);
+      ctx.restore();
+      p.y += p.d;
+      p.x += Math.sin(p.tiltAngleInc);
+      p.tilt += p.tiltAngleInc * 15;
+      if(p.y > h + 20){ p.y = -10; p.x = Math.random()*w; }
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* Hearts */
+function startHearts(){
+  document.querySelectorAll('.heart').forEach(el=>{
+    el.addEventListener('click', ()=> spawnHeart(el.dataset.color));
+  });
+}
+function spawnHeart(color){
+  const s = document.createElement('div');
+  s.style.position='fixed'; s.style.zIndex=999; s.style.left=(Math.random()*60+20)+'%'; s.style.bottom='40px'; s.style.pointerEvents='none';
+  s.innerHTML = '<svg width="40" height="40" viewBox="0 0 24 24" fill="'+color+'" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7.33-4.9-9.53-8.047C-.35 7.983 3.4 4 7 6.023A5.5 5.5 0 0112 7.5c1.6-3 5-1.1 5-1.1 3.5-2.1 7.35 1.98 4.53 6.953C19.33 16.1 12 21 12 21z"/></svg>';
+  document.body.appendChild(s);
+  let y = 40; let op=1; const id = setInterval(()=>{
+    y += 4; op -= 0.02;
+    s.style.bottom = (y)+'px';
+    s.style.opacity = op;
+    s.style.transform = 'translateX(' + (Math.random()*40-20) + 'px) rotate(' + (Math.random()*80-40) + 'deg)';
+    if(op <= 0){ clearInterval(id); s.remove(); }
+  }, 45);
+}
+
+/* Fireworks */
+const fireCanvas = document.getElementById('fireCanvas');
+const fctx = fireCanvas.getContext('2d');
+fireCanvas.width = innerWidth; fireCanvas.height = innerHeight;
+window.addEventListener('resize', ()=> { fireCanvas.width = innerWidth; fireCanvas.height = innerHeight; });
+
+function triggerFireworks(){
+  const fireworks = [];
+  const particles = [];
+  const colors = ['#ff6b6b','#ffd56b','#8be3ff','#bfa2ff','#9bffb3'];
+
+  for(let i=0;i<6;i++){
+    fireworks.push({
+      x: Math.random()*innerWidth*0.8 + innerWidth*0.1,
+      y: innerHeight + 20,
+      targetY: Math.random()*innerHeight*0.4 + 100,
+      vx: (Math.random()*2-1),
+      vy: -(6+Math.random()*6),
+      exploded:false,
+      hue: colors[i%colors.length]
+    });
+  }
+
+  function loop(){
+    fctx.clearRect(0,0,fireCanvas.width, fireCanvas.height);
+    fireworks.forEach((f)=>{
+      if(!f.exploded){
+        f.x += f.vx; f.y += f.vy; f.vy += 0.12;
+        fctx.beginPath(); fctx.fillStyle = f.hue; fctx.arc(f.x,f.y,3,0,Math.PI*2); fctx.fill();
+        if(f.vy >= 0 || f.y <= f.targetY){
+          f.exploded = true;
+          for(let p=0;p<40;p++){
+            particles.push({
+              x:f.x, y:f.y,
+              vx:(Math.random()*6-3),
+              vy:(Math.random()*6-3),
+              life: 40 + Math.random()*40,
+              color: colors[Math.floor(Math.random()*colors.length)],
+            });
+          }
+        }
+      }
+    });
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy; p.vy += 0.03; p.life--;
+      fctx.beginPath();
+      fctx.fillStyle = p.color;
+      fctx.globalAlpha = Math.max(0, p.life/80);
+      fctx.fillRect(p.x, p.y, 3, 3);
+      if(p.life <= 0) particles.splice(i,1);
+    }
+    fctx.globalAlpha = 1;
+    if(fireworks.some(f=>!f.exploded) || particles.length) requestAnimationFrame(loop);
+    else setTimeout(()=>{ fctx.clearRect(0,0,fireCanvas.width,fireCanvas.height); }, 300);
+  }
+  loop();
+}
+
+/* Download simple index.html file (client-side) */
+function downloadZip(){
+  const indexHtml = document.documentElement.outerHTML;
+  const blob = new Blob([indexHtml], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'index.html'; a.click();
+  URL.revokeObjectURL(url);
+  alert('index.html downloaded. Put it in a folder with music.mp3 (optional) and share the folder or upload to Netlify.');
+}
+
+/* Export button */
+if(document.getElementById('exportBtn')){
+  document.getElementById('exportBtn').addEventListener('click', ()=> {
+    alert('Quick share options:\n1) Netlify Drop — drag & drop the folder.\n2) GitHub Pages — push & enable Pages.\n3) Upload ZIP to Drive and share link.');
+  });
+}
+if(document.getElementById('downloadZip')){
+  document.getElementById('downloadZip').addEventListener('click', downloadZip);
+}
+
+/* On load polish */
+window.addEventListener('load', ()=> { bgMusic.volume = 0.65; });
+</script>
+</body>
+</html>
